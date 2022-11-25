@@ -11,6 +11,7 @@ This script read wp-config.php file, create a backup and convert the collate and
 - set all tables (each for line) into tables.txt
 
 # USAGE
+- `cd /var/www/website`
 - `wp-cdtc /path/to/tables.txt utf8mb4 utf8mb4_unicode_520_ci`
        
 # AUTHOR: 
