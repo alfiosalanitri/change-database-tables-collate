@@ -1,0 +1,62 @@
+#!/bin/bash
+#
+# NAME
+# change-database-tables-collate - Bash script to change charset and collate to database specific tables parsed from txt file
+#
+# DESCRIPTION
+# This script create a backup and convert the collate and charset to all tables parsed from tables.txt file
+#
+# USAGE
+# `change-database-tables-collate /path/to/tables.txt database utf8mb4 utf8mb4_unicode_520_ci`
+#
+# INSTALLATION
+# - `sudo chmod +x /path/to/change-database-tables-collate/change-database-tables-collate`
+# - `sudo ln -s /path/to/change-database-tables-collate/change-database-tables-collate /usr/local/bin/change-database-tables-collate` (optional)
+# - `cp tables.txt.example tables.txt`
+# - set all tables (each for line) into tables.txt
+#
+# AUTHOR:
+#	change-database-tables-collate is written by Alfio Salanitri <www.alfiosalanitri.it> and are licensed under the MIT License.
+
+#############################################################
+if [ ! -f "$1" ]; then
+  echo "[!] Type the full path to tables.txt file with database tables name (each for line)."
+  exit 1
+fi
+if [ -z "$2" ]; then
+  echo "[!] Type the database name."
+  exit 1
+fi
+if [ -z "$3" ]; then
+  echo "[!] Type the charset (es: utf8mb4)."
+  exit 1
+fi
+if [ -z "$4" ]; then
+  echo "[!] Type the collate (es: utf8mb4_unicode_520_ci)."
+  exit 1
+fi
+# create array from txt file
+mapfile -t DB_TABLES < $1
+# set database, charset and collate
+readonly DB_NAME=$2
+readonly CHARSET=$3
+readonly COLLATE=$4
+
+echo "[1/2] backup database, wait please..."
+if [ "" != "$(mysqldump $DB_NAME > $DB_NAME-bkp.sql)" ]; then
+  echo "[!] backup database failed!"
+  exit 1
+fi
+
+echo "[2/2] update database tables, wait please..."
+for TABLE in ${DB_TABLES[@]};
+do
+  result=$(mysql --database=$DB_NAME -e "ALTER TABLE $TABLE CONVERT TO CHARACTER SET $CHARSET COLLATE $COLLATE;" 2>&1 )
+  if [ $? != 0 ]; then
+   echo "[!] alter failed for $TABLE: $result"
+   exit 1
+  fi
+  echo "-- $TABLE updated."
+done
+echo "[ok] conversion completed."
+exit 0
